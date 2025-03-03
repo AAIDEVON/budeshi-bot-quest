@@ -1,7 +1,6 @@
-
 import { Message, ProjectInfo } from "./types";
 
-// Mock data for demonstration - this would be replaced with actual API calls
+// Mock data for demonstration - this would be replaced with actual database queries
 const mockProjects: ProjectInfo[] = [
   {
     id: "1",
@@ -59,180 +58,94 @@ export const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-// Basic intent recognition
-const recognizeIntent = (message: string): string => {
-  message = message.toLowerCase();
-  
-  if (message.includes('hello') || message.includes('hi') || message.includes('start')) {
-    return 'greeting';
-  }
-  
-  if (message.includes('help') || message.includes('what can you do')) {
-    return 'help';
-  }
-  
-  if (message.includes('project') || message.includes('projects')) {
-    return 'projects';
-  }
-  
-  if (message.includes('budget') || message.includes('cost') || message.includes('amount') || message.includes('money') || message.includes('spent')) {
-    return 'budget';
-  }
-  
-  if (message.includes('status') || message.includes('progress') || message.includes('complete')) {
-    return 'status';
-  }
+// Generate system prompt with context about BUDESHI and available data
+const generateSystemPrompt = (): string => {
+  // Create a condensed version of the projects data to include in the prompt
+  const projectsData = mockProjects.map(project => ({
+    name: project.name,
+    status: project.status,
+    budget: formatCurrency(project.budget),
+    spent: formatCurrency(project.spent),
+    location: project.location,
+    ministry: project.ministry,
+    contractor: project.contractor
+  }));
 
-  if (message.includes('ministry') || message.includes('ministries') || message.includes('department') || message.includes('agency')) {
-    return 'ministry';
-  }
+  return `You are BUDESHI assistant, an AI dedicated to providing information about government procurement projects in Nigeria.
+Your goal is to make government procurement transparent and accessible to all citizens.
 
-  if (message.includes('location') || message.includes('where')) {
-    return 'location';
-  }
+You have access to the following project information:
+${JSON.stringify(projectsData, null, 2)}
 
-  if (message.includes('contractor') || message.includes('company')) {
-    return 'contractor';
-  }
-  
-  if (message.includes('thank')) {
-    return 'thanks';
-  }
-  
-  if (message.includes('bye') || message.includes('goodbye')) {
-    return 'goodbye';
-  }
-  
-  return 'unknown';
+When providing monetary values, format them as Nigerian Naira.
+Always be helpful, concise, and accurate. If you don't know the answer, say so rather than making up information.
+Remember that you are helping citizens understand how government funds are being spent on procurement projects.`;
 };
 
-// Function to handle projects queries
-const handleProjectsQuery = (query: string): string => {
-  query = query.toLowerCase();
-  
-  // Check if query is about a specific project
-  for (const project of mockProjects) {
-    if (query.includes(project.name.toLowerCase())) {
-      return `Project: ${project.name}\nStatus: ${project.status}\nBudget: ${formatCurrency(project.budget)}\nSpent: ${formatCurrency(project.spent)}\nLocation: ${project.location}\nContractor: ${project.contractor}`;
+// Call LLM API to get response
+const callLLMAPI = async (userMessage: string, conversationHistory: { role: string, content: string }[]): Promise<string> => {
+  try {
+    const apiKey = localStorage.getItem('openai_api_key');
+    
+    // If no API key is set, use a fallback response
+    if (!apiKey) {
+      console.warn("No OpenAI API key found in localStorage. Using fallback response.");
+      return "I'm unable to connect to the AI service at the moment. Please set your API key by clicking the settings button.";
     }
-  }
-  
-  // List all projects
-  return "Here are some government projects I have information about:\n\n" + 
-    mockProjects.map(p => `- ${p.name} (${p.status})`).join("\n") + 
-    "\n\nYou can ask me about any of these projects for more details.";
-};
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini', // Using a cheaper, fast model
+        messages: conversationHistory,
+        temperature: 0.7,
+        max_tokens: 500
+      })
+    });
 
-// Function to handle budget queries
-const handleBudgetQuery = (query: string): string => {
-  query = query.toLowerCase();
-  
-  // Check if query is about a specific project
-  for (const project of mockProjects) {
-    if (query.includes(project.name.toLowerCase())) {
-      const percentSpent = (project.spent / project.budget * 100).toFixed(1);
-      return `Budget information for ${project.name}:\nAllocated Budget: ${formatCurrency(project.budget)}\nAmount Spent: ${formatCurrency(project.spent)} (${percentSpent}% of budget)\n${project.spent > project.budget ? "⚠️ This project has exceeded its budget." : ""}`;
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('LLM API error:', errorData);
+      throw new Error(`API error: ${response.status}`);
     }
-  }
-  
-  // General budget information
-  const totalBudget = mockProjects.reduce((sum, p) => sum + p.budget, 0);
-  const totalSpent = mockProjects.reduce((sum, p) => sum + p.spent, 0);
-  
-  return `Total budget across all tracked projects: ${formatCurrency(totalBudget)}\nTotal spent: ${formatCurrency(totalSpent)}\n\nFor details on a specific project, please mention its name.`;
-};
 
-// Function to handle status queries
-const handleStatusQuery = (query: string): string => {
-  query = query.toLowerCase();
-  
-  // Check if query is about a specific project
-  for (const project of mockProjects) {
-    if (query.includes(project.name.toLowerCase())) {
-      const statusEmoji = 
-        project.status === "Completed" ? "✅" : 
-        project.status === "In Progress" ? "🏗️" : 
-        project.status === "Delayed" ? "⚠️" : "❓";
-      
-      return `${statusEmoji} Status of ${project.name}: ${project.status}\nStart Date: ${project.startDate}\nExpected Completion: ${project.endDate}`;
-    }
-  }
-  
-  // Status summary
-  const completed = mockProjects.filter(p => p.status === "Completed").length;
-  const inProgress = mockProjects.filter(p => p.status === "In Progress").length;
-  const delayed = mockProjects.filter(p => p.status === "Delayed").length;
-  
-  return `Project Status Summary:\n✅ Completed: ${completed}\n🏗️ In Progress: ${inProgress}\n⚠️ Delayed: ${delayed}\n\nFor details on a specific project, please mention its name.`;
-};
-
-// Generate response based on intent and query
-export const generateResponse = async (message: string): Promise<string> => {
-  // Simulate processing delay
-  await new Promise(resolve => setTimeout(resolve, 300));
-  
-  const intent = recognizeIntent(message);
-  
-  switch (intent) {
-    case 'greeting':
-      return "Hello! I'm the BUDESHI assistant here to help you access information about government procurement projects in Nigeria. What would you like to know?";
-    
-    case 'help':
-      return "I can provide information about government projects including their budgets, status, locations, and contractors. You can ask me things like:\n\n- What projects are currently ongoing?\n- What's the budget for the Lagos-Ibadan Expressway project?\n- Which ministry handles the Primary Healthcare Centers Renovation?\n- What's the status of the Abuja Light Rail Project?\n\nHow can I assist you today?";
-    
-    case 'projects':
-      return handleProjectsQuery(message);
-    
-    case 'budget':
-      return handleBudgetQuery(message);
-    
-    case 'status':
-      return handleStatusQuery(message);
-    
-    case 'ministry':
-      for (const project of mockProjects) {
-        if (message.toLowerCase().includes(project.name.toLowerCase())) {
-          return `The ${project.name} is managed by the ${project.ministry}.`;
-        }
-      }
-      return "I can provide information about which ministries or agencies are responsible for specific projects. Please specify a project name.";
-    
-    case 'location':
-      for (const project of mockProjects) {
-        if (message.toLowerCase().includes(project.name.toLowerCase())) {
-          return `The ${project.name} is located in ${project.location}.`;
-        }
-      }
-      return "I can tell you where specific projects are located. Please specify a project name.";
-    
-    case 'contractor':
-      for (const project of mockProjects) {
-        if (message.toLowerCase().includes(project.name.toLowerCase())) {
-          return `The contractor for the ${project.name} is ${project.contractor}.`;
-        }
-      }
-      return "I can provide information about contractors working on government projects. Please specify a project name.";
-    
-    case 'thanks':
-      return "You're welcome! I'm here to help make government procurement information accessible. Is there anything else you'd like to know?";
-    
-    case 'goodbye':
-      return "Thank you for using BUDESHI. We're committed to making government more transparent for all Nigerians. Have a great day!";
-    
-    case 'unknown':
-    default:
-      return "I'm not sure I understand your question. I can provide information about government projects, their budgets, status, and implementing agencies. Could you rephrase your question?";
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Error calling LLM API:', error);
+    throw error;
   }
 };
 
 // Process a new message and get a response
-export const processMessage = async (content: string): Promise<Message> => {
-  const response = await generateResponse(content);
-  
-  return {
-    id: generateId(),
-    content: response,
-    role: 'bot',
-    timestamp: new Date()
-  };
+export const processMessage = async (content: string, previousMessages: Message[] = []): Promise<Message> => {
+  try {
+    // Convert previous messages to the format expected by the LLM API
+    const conversationHistory = [
+      { role: 'system', content: generateSystemPrompt() },
+      ...previousMessages.map(msg => ({
+        role: msg.role === 'bot' ? 'assistant' : msg.role,
+        content: msg.content
+      })),
+      { role: 'user', content }
+    ];
+
+    // Call the LLM API
+    const response = await callLLMAPI(content, conversationHistory);
+    
+    // Return the bot message
+    return {
+      id: generateId(),
+      content: response,
+      role: 'bot',
+      timestamp: new Date()
+    };
+  } catch (error) {
+    console.error('Error processing message:', error);
+    throw error;
+  }
 };

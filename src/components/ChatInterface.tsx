@@ -4,7 +4,7 @@ import ChatInput from './ChatInput';
 import { Message } from '../lib/types';
 import { generateId, processMessage } from '../lib/chatbot';
 import { Button } from './ui/button';
-import { DownloadIcon, RefreshCwIcon } from 'lucide-react';
+import { DownloadIcon, RefreshCwIcon, SettingsIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ChatInterface: React.FC = () => {
@@ -17,6 +17,7 @@ const ChatInterface: React.FC = () => {
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(localStorage.getItem('openai_api_key'));
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handleSendMessage = async (content: string) => {
@@ -34,8 +35,8 @@ const ChatInterface: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Process the message and get bot response
-      const botResponse = await processMessage(content);
+      // Process the message and get bot response with message history
+      const botResponse = await processMessage(content, messages);
       setMessages(prev => [...prev, botResponse]);
     } catch (error) {
       console.error('Error processing message:', error);
@@ -94,6 +95,17 @@ const ChatInterface: React.FC = () => {
     });
   };
 
+  const setOpenAIKey = () => {
+    const key = prompt("Enter your OpenAI API key:");
+    if (key) {
+      localStorage.setItem('openai_api_key', key);
+      setApiKey(key);
+      toast.success("API key saved", {
+        description: "Your API key has been saved to localStorage"
+      });
+    }
+  };
+
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -104,6 +116,15 @@ const ChatInterface: React.FC = () => {
       <div className="flex-1 overflow-y-auto pb-4 px-4">
         <div className="max-w-3xl mx-auto pt-4">
           <div className="flex justify-end space-x-2 mb-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs h-8"
+              onClick={setOpenAIKey}
+            >
+              <SettingsIcon className="h-3.5 w-3.5 mr-1.5" />
+              {apiKey ? "Change API Key" : "Set API Key"}
+            </Button>
             <Button 
               variant="outline" 
               size="sm" 
@@ -123,6 +144,12 @@ const ChatInterface: React.FC = () => {
               Download
             </Button>
           </div>
+          
+          {!apiKey && (
+            <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded">
+              Please set your OpenAI API key to use the LLM-powered chat assistant. Click the "Set API Key" button above.
+            </div>
+          )}
           
           {messages.map(message => (
             <ChatMessage key={message.id} message={message} />
