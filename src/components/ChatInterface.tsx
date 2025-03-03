@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
@@ -6,7 +5,7 @@ import { Message } from '../lib/types';
 import { generateId, processMessage } from '../lib/chatbot';
 import { Button } from './ui/button';
 import { DownloadIcon, RefreshCwIcon } from 'lucide-react';
-import { toast } from '../components/ui/sonner';
+import { toast } from 'sonner';
 
 const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
