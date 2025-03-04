@@ -1,3 +1,4 @@
+
 import { Message, ProjectInfo } from "./types";
 
 // Mock data for demonstration - this would be replaced with actual database queries
@@ -79,7 +80,17 @@ ${JSON.stringify(projectsData, null, 2)}
 
 When providing monetary values, format them as Nigerian Naira.
 Always be helpful, concise, and accurate. If you don't know the answer, say so rather than making up information.
-Remember that you are helping citizens understand how government funds are being spent on procurement projects.`;
+Remember that you are helping citizens understand how government funds are being spent on procurement projects.
+
+FORMATTING INSTRUCTIONS:
+- Format your responses using Markdown to make them highly readable and well-structured
+- Use **bold** for emphasis on important information like project names, budget amounts, etc.
+- Use headings (## and ###) to organize information when providing details about multiple projects
+- Use bullet points or numbered lists when presenting multiple items or facts
+- Use tables when comparing data across multiple projects
+- For monetary values, always format as ₦XXX,XXX,XXX
+- Highlight key metrics by formatting them separately on their own lines
+`;
 };
 
 // Call LLM API to get response
@@ -103,7 +114,7 @@ const callLLMAPI = async (userMessage: string, conversationHistory: { role: stri
         model: 'gpt-4o-mini', // Using a cheaper, fast model
         messages: conversationHistory,
         temperature: 0.7,
-        max_tokens: 500
+        max_tokens: 800
       })
     });
 

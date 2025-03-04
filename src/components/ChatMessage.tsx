@@ -1,5 +1,6 @@
 
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Message } from '../lib/types';
 import { cn } from '../lib/utils';
 
@@ -18,13 +19,6 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       </div>
     );
   }
-  
-  const formattedContent = message.content.split('\n').map((line, i) => (
-    <React.Fragment key={i}>
-      {line}
-      {i < message.content.split('\n').length - 1 && <br />}
-    </React.Fragment>
-  ));
 
   return (
     <div 
@@ -47,12 +41,37 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
             <div className="ml-1.5 text-xs font-medium">BUDESHI Assistant</div>
           </div>
         )}
+        
         <div className={cn(
-          "text-sm",
-          isBot ? "" : "font-medium"
+          "text-sm prose-sm max-w-none",
+          isBot ? "prose" : "font-medium"
         )}>
-          {formattedContent}
+          {isBot ? (
+            <ReactMarkdown
+              components={{
+                h1: ({ children }) => <h1 className="text-lg font-bold my-2">{children}</h1>,
+                h2: ({ children }) => <h2 className="text-md font-bold my-2">{children}</h2>,
+                h3: ({ children }) => <h3 className="text-base font-bold my-1.5">{children}</h3>,
+                ul: ({ children }) => <ul className="list-disc pl-5 my-2">{children}</ul>,
+                ol: ({ children }) => <ol className="list-decimal pl-5 my-2">{children}</ol>,
+                li: ({ children }) => <li className="my-1">{children}</li>,
+                p: ({ children }) => <p className="my-1.5">{children}</p>,
+                strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                em: ({ children }) => <em className="italic">{children}</em>,
+                table: ({ children }) => <div className="overflow-x-auto my-2"><table className="border-collapse border border-border w-full">{children}</table></div>,
+                th: ({ children }) => <th className="border border-border bg-muted px-2 py-1 text-left">{children}</th>,
+                td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
+                code: ({ children }) => <code className="bg-muted px-1 py-0.5 rounded text-xs">{children}</code>,
+                blockquote: ({ children }) => <blockquote className="border-l-4 border-budeshi pl-3 my-2 italic">{children}</blockquote>,
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          ) : (
+            <>{message.content}</>
+          )}
         </div>
+        
         <div className={cn(
           "text-xs mt-1.5",
           isBot ? "text-muted-foreground" : "text-primary-foreground/70"

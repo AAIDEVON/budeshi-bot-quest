@@ -105,8 +105,47 @@ export default {
 			},
 			backdropBlur: {
 				xs: '2px',
-			}
+			},
+			typography: {
+				DEFAULT: {
+					css: {
+						maxWidth: '100%',
+						color: 'inherit',
+						p: {
+							marginTop: '0.75rem',
+							marginBottom: '0.75rem',
+						},
+						a: {
+							color: 'var(--budeshi)',
+							textDecoration: 'underline',
+							'&:hover': {
+								color: 'var(--budeshi-dark)',
+							},
+						},
+						h1: {
+							marginTop: '1.5rem',
+							marginBottom: '1rem',
+						},
+						h2: {
+							marginTop: '1.25rem',
+							marginBottom: '0.75rem',
+						},
+						h3: {
+							marginTop: '1rem',
+							marginBottom: '0.5rem',
+						},
+						code: {
+							backgroundColor: 'var(--muted)',
+							borderRadius: '0.25rem',
+							padding: '0.125rem 0.25rem',
+						},
+					},
+				},
+			},
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [
+		require("tailwindcss-animate"),
+		require('@tailwindcss/typography'),
+	],
 } satisfies Config;
