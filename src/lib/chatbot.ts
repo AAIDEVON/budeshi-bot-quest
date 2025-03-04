@@ -44,7 +44,22 @@ export const fetchProjects = async (): Promise<ProjectInfo[]> => {
     const database = client.db("budeshi");
     const collection = database.collection("projects");
     
-    const projects = await collection.find({}).toArray() as ProjectInfo[];
+    // Explicitly type and map the raw documents to ProjectInfo
+    const documents = await collection.find({}).toArray();
+    const projects: ProjectInfo[] = documents.map(doc => ({
+      id: doc._id?.toString() || doc.id?.toString() || generateId(),
+      name: doc.name as string || "",
+      description: doc.description as string || "",
+      status: doc.status as string || "",
+      budget: Number(doc.budget) || 0,
+      spent: Number(doc.spent) || 0,
+      location: doc.location as string || "",
+      startDate: doc.startDate as string || "",
+      endDate: doc.endDate as string || "",
+      ministry: doc.ministry as string || "",
+      contractor: doc.contractor as string || ""
+    }));
+    
     return projects;
   } catch (error) {
     console.error("Error fetching projects from MongoDB:", error);
