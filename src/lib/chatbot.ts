@@ -1,7 +1,60 @@
 
 import { Message, ProjectInfo } from "./types";
+import { MongoClient } from "mongodb";
 
-// Mock data for demonstration - this would be replaced with actual database queries
+// We'll use the MongoDB driver to connect to the database
+let mongoClient: MongoClient | null = null;
+let isConnecting = false;
+
+// Function to connect to MongoDB
+export const connectToMongoDB = async (): Promise<MongoClient> => {
+  if (mongoClient) return mongoClient;
+  if (isConnecting) {
+    // Wait for connection to complete if already in progress
+    while (isConnecting) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    if (mongoClient) return mongoClient;
+  }
+  
+  try {
+    isConnecting = true;
+    const uri = localStorage.getItem('mongodb_uri');
+    
+    if (!uri) {
+      throw new Error("MongoDB URI not found in localStorage");
+    }
+    
+    mongoClient = new MongoClient(uri);
+    await mongoClient.connect();
+    console.log("Successfully connected to MongoDB");
+    return mongoClient;
+  } catch (error) {
+    console.error("Failed to connect to MongoDB:", error);
+    throw error;
+  } finally {
+    isConnecting = false;
+  }
+};
+
+// Function to fetch projects from MongoDB
+export const fetchProjects = async (): Promise<ProjectInfo[]> => {
+  try {
+    const client = await connectToMongoDB();
+    const database = client.db("budeshi");
+    const collection = database.collection("projects");
+    
+    const projects = await collection.find({}).toArray() as ProjectInfo[];
+    return projects;
+  } catch (error) {
+    console.error("Error fetching projects from MongoDB:", error);
+    
+    // Fallback to mock data if MongoDB connection fails
+    return mockProjects;
+  }
+};
+
+// Mock data for fallback and initial loading
 const mockProjects: ProjectInfo[] = [
   {
     id: "1",
@@ -60,19 +113,23 @@ export const formatCurrency = (amount: number): string => {
 };
 
 // Generate system prompt with context about BUDESHI and available data
-const generateSystemPrompt = (): string => {
-  // Create a condensed version of the projects data to include in the prompt
-  const projectsData = mockProjects.map(project => ({
-    name: project.name,
-    status: project.status,
-    budget: formatCurrency(project.budget),
-    spent: formatCurrency(project.spent),
-    location: project.location,
-    ministry: project.ministry,
-    contractor: project.contractor
-  }));
+const generateSystemPrompt = async (): Promise<string> => {
+  try {
+    // Fetch projects from MongoDB
+    const projects = await fetchProjects();
+    
+    // Create a condensed version of the projects data to include in the prompt
+    const projectsData = projects.map(project => ({
+      name: project.name,
+      status: project.status,
+      budget: formatCurrency(project.budget),
+      spent: formatCurrency(project.spent),
+      location: project.location,
+      ministry: project.ministry,
+      contractor: project.contractor
+    }));
 
-  return `You are BUDESHI assistant, an AI dedicated to providing information about government procurement projects in Nigeria.
+    return `You are BUDESHI assistant, an AI dedicated to providing information about government procurement projects in Nigeria.
 Your goal is to make government procurement transparent and accessible to all citizens.
 
 You have access to the following project information:
@@ -91,6 +148,17 @@ FORMATTING INSTRUCTIONS:
 - For monetary values, always format as ₦XXX,XXX,XXX
 - Highlight key metrics by formatting them separately on their own lines
 `;
+  } catch (error) {
+    console.error("Error generating system prompt:", error);
+    
+    // Return a basic system prompt if there was an error
+    return `You are BUDESHI assistant, an AI dedicated to providing information about government procurement projects in Nigeria.
+Your goal is to make government procurement transparent and accessible to all citizens.
+
+When providing monetary values, format them as Nigerian Naira.
+Always be helpful, concise, and accurate. If you don't know the answer, say so rather than making up information.
+Remember that you are helping citizens understand how government funds are being spent on procurement projects.`;
+  }
 };
 
 // Call LLM API to get response
@@ -136,8 +204,9 @@ const callLLMAPI = async (userMessage: string, conversationHistory: { role: stri
 export const processMessage = async (content: string, previousMessages: Message[] = []): Promise<Message> => {
   try {
     // Convert previous messages to the format expected by the LLM API
+    const systemPrompt = await generateSystemPrompt();
     const conversationHistory = [
-      { role: 'system', content: generateSystemPrompt() },
+      { role: 'system', content: systemPrompt },
       ...previousMessages.map(msg => ({
         role: msg.role === 'bot' ? 'assistant' : msg.role,
         content: msg.content
