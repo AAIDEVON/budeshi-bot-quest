@@ -117,7 +117,7 @@ const ChatInterface: React.FC = () => {
         description: "Your MongoDB URI has been saved to localStorage. Refreshing the page to connect to the database."
       });
       
-      // Optional: Force a refresh to reconnect with the new URI
+      // Force a refresh to reconnect with the new URI
       setTimeout(() => {
         window.location.reload();
       }, 2000);
@@ -191,7 +191,7 @@ const ChatInterface: React.FC = () => {
           {isLoading && (
             <div className="flex justify-start mb-4">
               <div className="glass rounded-xl rounded-tl-sm p-4 flex items-center space-x-2 max-w-[85%] md:max-w-[70%] animate-pulse-slow">
-                <div className="w-5 h-5 rounded bg-budeshi flex items-center justify-center text-white text-xs font-semibold">
+                <div className="w-5 h-5 rounded bg-primary flex items-center justify-center text-white text-xs font-semibold">
                   B
                 </div>
                 <div className="text-sm">Thinking...</div>

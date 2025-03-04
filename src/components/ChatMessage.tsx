@@ -30,12 +30,12 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       <div 
         className={cn(
           "rounded-xl p-4 max-w-[85%] md:max-w-[70%]",
-          isBot ? "glass border-border mr-auto rounded-tl-sm" : "bg-budeshi text-white ml-auto rounded-tr-sm"
+          isBot ? "glass border-border mr-auto rounded-tl-sm" : "bg-primary text-white ml-auto rounded-tr-sm"
         )}
       >
         {isBot && (
           <div className="flex items-center mb-1.5">
-            <div className="w-5 h-5 rounded bg-budeshi flex items-center justify-center text-white text-xs font-semibold">
+            <div className="w-5 h-5 rounded bg-primary flex items-center justify-center text-white text-xs font-semibold">
               B
             </div>
             <div className="ml-1.5 text-xs font-medium">BUDESHI Assistant</div>
@@ -62,7 +62,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
                 th: ({ children }) => <th className="border border-border bg-muted px-2 py-1 text-left">{children}</th>,
                 td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
                 code: ({ children }) => <code className="bg-muted px-1 py-0.5 rounded text-xs">{children}</code>,
-                blockquote: ({ children }) => <blockquote className="border-l-4 border-budeshi pl-3 my-2 italic">{children}</blockquote>,
+                blockquote: ({ children }) => <blockquote className="border-l-4 border-primary pl-3 my-2 italic">{children}</blockquote>,
               }}
             >
               {message.content}

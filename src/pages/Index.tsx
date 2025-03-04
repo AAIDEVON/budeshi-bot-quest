@@ -17,6 +17,7 @@ const Index: React.FC = () => {
           await connectToMongoDB();
           setConnectionError(null);
         } catch (error) {
+          console.error("MongoDB connection error:", error);
           setConnectionError((error as Error).message);
         } finally {
           setIsConnecting(false);
@@ -30,7 +31,7 @@ const Index: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-background to-secondary/30">
       <Header />
-      <main className="flex-1 pt-[72px] relative">
+      <main className="flex-1 relative">
         {isConnecting && (
           <div className="absolute top-0 left-0 right-0 bg-yellow-100 text-yellow-800 text-center py-2 text-sm">
             Connecting to MongoDB...
