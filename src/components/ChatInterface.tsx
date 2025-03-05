@@ -5,7 +5,7 @@ import ChatInput from './ChatInput';
 import { Message } from '../lib/types';
 import { generateId, processMessage } from '../lib/chatbot';
 import { Button } from './ui/button';
-import { DownloadIcon, RefreshCwIcon, SettingsIcon, Database } from 'lucide-react';
+import { DownloadIcon, RefreshCwIcon, SettingsIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ChatInterface: React.FC = () => {
@@ -19,7 +19,6 @@ const ChatInterface: React.FC = () => {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(localStorage.getItem('openai_api_key'));
-  const [mongoDBUri, setMongoDBUri] = useState<string | null>(localStorage.getItem('mongodb_uri'));
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handleSendMessage = async (content: string) => {
@@ -108,22 +107,6 @@ const ChatInterface: React.FC = () => {
     }
   };
 
-  const setMongoDBConnection = () => {
-    const uri = prompt("Enter your MongoDB connection string:");
-    if (uri) {
-      localStorage.setItem('mongodb_uri', uri);
-      setMongoDBUri(uri);
-      toast.success("MongoDB URI saved", {
-        description: "Your MongoDB URI has been saved to localStorage. Refreshing the page to connect to the database."
-      });
-      
-      // Force a refresh to reconnect with the new URI
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-    }
-  };
-
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -134,15 +117,6 @@ const ChatInterface: React.FC = () => {
       <div className="flex-1 overflow-y-auto pb-4 px-4">
         <div className="max-w-3xl mx-auto pt-4">
           <div className="flex justify-end space-x-2 mb-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="text-xs h-8"
-              onClick={setMongoDBConnection}
-            >
-              <Database className="h-3.5 w-3.5 mr-1.5" />
-              {mongoDBUri ? "Change MongoDB" : "Set MongoDB"}
-            </Button>
             <Button 
               variant="outline" 
               size="sm" 
@@ -175,12 +149,6 @@ const ChatInterface: React.FC = () => {
           {!apiKey && (
             <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded">
               Please set your OpenAI API key to use the LLM-powered chat assistant. Click the "Set API Key" button above.
-            </div>
-          )}
-          
-          {!mongoDBUri && (
-            <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded">
-              Please set your MongoDB connection string to fetch real project data. Click the "Set MongoDB" button above.
             </div>
           )}
           
