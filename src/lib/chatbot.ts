@@ -1,5 +1,5 @@
 
-import { Message, ProjectInfo } from "./types";
+import { Message, ProjectInfo, UserPreferences } from "./types";
 
 // Mock data for projects
 const mockProjects: ProjectInfo[] = [
@@ -41,11 +41,50 @@ const mockProjects: ProjectInfo[] = [
     endDate: "2023-01-10",
     ministry: "Ministry of Health",
     contractor: "Multiple Contractors"
+  },
+  {
+    id: "4",
+    name: "Second Niger Bridge Construction",
+    description: "Construction of a second bridge over the River Niger between Asaba and Onitsha",
+    status: "Completed",
+    budget: 206870000000,
+    spent: 210000000000,
+    location: "Delta/Anambra States",
+    startDate: "2017-08-15",
+    endDate: "2022-10-25",
+    ministry: "Ministry of Works and Housing",
+    contractor: "Julius Berger Nigeria PLC"
+  },
+  {
+    id: "5",
+    name: "Mambilla Hydroelectric Power Project",
+    description: "Construction of a 3,050 MW hydroelectric power plant on the Mambilla Plateau",
+    status: "Planning Phase",
+    budget: 5800000000000,
+    spent: 200000000000,
+    location: "Taraba State",
+    startDate: "2021-06-01",
+    endDate: "2030-12-31",
+    ministry: "Ministry of Power",
+    contractor: "China Civil Engineering Construction Corporation"
+  },
+  {
+    id: "6",
+    name: "Lekki Deep Sea Port Development",
+    description: "Development of a deep sea port in the Lagos Free Trade Zone",
+    status: "In Progress",
+    budget: 398000000000,
+    spent: 290000000000,
+    location: "Lagos State",
+    startDate: "2019-03-29",
+    endDate: "2024-09-30",
+    ministry: "Ministry of Transportation",
+    contractor: "China Harbour Engineering Company"
   }
 ];
 
 // Function to fetch projects (now simply returns mock data)
-export const fetchProjects = async (): Promise<ProjectInfo[]> => {
+export const fetchProjects = (): ProjectInfo[] => {
   return mockProjects;
 };
 
@@ -62,6 +101,42 @@ export const formatCurrency = (amount: number): string => {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
   }).format(amount);
+};
+
+// Load user preferences from localStorage
+export const loadUserPreferences = (): UserPreferences => {
+  const savedPrefs = localStorage.getItem('budeshi_user_preferences');
+  if (savedPrefs) {
+    try {
+      return JSON.parse(savedPrefs);
+    } catch (e) {
+      console.error('Error parsing saved preferences:', e);
+    }
+  }
+  
+  // Default preferences
+  return {
+    theme: 'system',
+    fontSize: 'medium',
+    detailedResponses: true,
+    includeCharts: true
+  };
+};
+
+// Save user preferences to localStorage
+export const saveUserPreferences = (preferences: UserPreferences): void => {
+  localStorage.setItem('budeshi_user_preferences', JSON.stringify(preferences));
+};
+
+// Find project by name or ID
+export const findProject = (searchTerm: string): ProjectInfo | undefined => {
+  const normalizedTerm = searchTerm.toLowerCase().trim();
+  
+  return mockProjects.find(
+    project => 
+      project.id === normalizedTerm ||
+      project.name.toLowerCase().includes(normalizedTerm)
+  );
 };
 
 // Generate system prompt with context about BUDESHI and available data
@@ -86,6 +161,12 @@ ${JSON.stringify(projectsData, null, 2)}
 When providing monetary values, format them as Nigerian Naira.
 Always be helpful, concise, and accurate. If you don't know the answer, say so rather than making up information.
 Remember that you are helping citizens understand how government funds are being spent on procurement projects.
+
+You can also help users by:
+- Explaining procurement terms and processes
+- Comparing projects based on budget, location, or status
+- Suggesting ways citizens can monitor or get involved in procurement oversight
+- Providing information on transparency in governance
 
 FORMATTING INSTRUCTIONS:
 - Format your responses using Markdown to make them highly readable and well-structured
@@ -165,4 +246,35 @@ export const processMessage = async (content: string, previousMessages: Message[
     console.error('Error processing message:', error);
     throw error;
   }
+};
+
+// Export projects as CSV
+export const exportProjectsAsCSV = (projects: ProjectInfo[] = mockProjects): string => {
+  const headers = [
+    'Name',
+    'Description',
+    'Status',
+    'Budget',
+    'Spent',
+    'Location',
+    'Ministry',
+    'Contractor',
+    'Start Date',
+    'End Date'
+  ].join(',');
+
+  const rows = projects.map(project => [
+    `"${project.name}"`,
+    `"${project.description}"`,
+    `"${project.status}"`,
+    project.budget,
+    project.spent,
+    `"${project.location}"`,
+    `"${project.ministry}"`,
+    `"${project.contractor}"`,
+    project.startDate,
+    project.endDate
+  ].join(','));
+
+  return [headers, ...rows].join('\n');
 };

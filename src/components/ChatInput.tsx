@@ -2,7 +2,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../components/ui/button';
 import { cn } from '../lib/utils';
-import { SendIcon, Loader2 } from 'lucide-react';
+import { SendIcon, Loader2, MicIcon, StopCircleIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -11,11 +12,80 @@ interface ChatInputProps {
 
 const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
   const [message, setMessage] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Initialize speech recognition when component mounts
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = 'en-NG';
+      
+      recognitionInstance.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('');
+        
+        setMessage(transcript);
+      };
+      
+      recognitionInstance.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        setIsListening(false);
+        toast.error('Speech recognition error', { 
+          description: event.error === 'not-allowed' 
+            ? 'Microphone access denied' 
+            : `Error: ${event.error}` 
+        });
+      };
+      
+      recognitionInstance.onend = () => {
+        setIsListening(false);
+      };
+      
+      setRecognition(recognitionInstance);
+    }
+    
+    return () => {
+      if (recognition) {
+        recognition.stop();
+      }
+    };
+  }, []);
+
+  const toggleListening = () => {
+    if (!recognition) {
+      toast.error('Speech recognition not supported', { 
+        description: 'Your browser does not support speech recognition' 
+      });
+      return;
+    }
+    
+    if (isListening) {
+      recognition.stop();
+      setIsListening(false);
+    } else {
+      recognition.start();
+      setIsListening(true);
+      toast.info('Listening...', { 
+        description: 'Speak clearly into your microphone' 
+      });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !isLoading) {
+      if (isListening && recognition) {
+        recognition.stop();
+        setIsListening(false);
+      }
       onSendMessage(message);
       setMessage('');
     }
@@ -41,7 +111,9 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
     "What projects are currently ongoing?",
     "What's the budget for the Lagos-Ibadan Expressway?",
     "Which contractor is working on the Abuja Light Rail?",
-    "What's the status of healthcare center renovations?"
+    "What's the status of healthcare center renovations?",
+    "Compare budgets of all transportation projects",
+    "Which project has the highest budget?"
   ];
 
   return (
@@ -75,6 +147,27 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
             disabled={isLoading}
             rows={1}
           />
+          
+          {recognition && (
+            <Button 
+              type="button" 
+              size="icon" 
+              variant="ghost"
+              className={cn(
+                "h-9 w-9 rounded-md mr-1 mb-2", 
+                isListening ? "text-red-500" : ""
+              )}
+              onClick={toggleListening}
+              disabled={isLoading}
+            >
+              {isListening ? (
+                <StopCircleIcon className="h-4 w-4" />
+              ) : (
+                <MicIcon className="h-4 w-4" />
+              )}
+            </Button>
+          )}
+          
           <Button 
             type="submit" 
             size="icon" 

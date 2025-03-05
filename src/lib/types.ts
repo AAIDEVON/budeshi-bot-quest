@@ -28,3 +28,26 @@ export interface ChatContextType {
   sendMessage: (content: string) => Promise<void>;
   clearMessages: () => void;
 }
+
+export interface UserPreferences {
+  theme: 'light' | 'dark' | 'system';
+  fontSize: 'small' | 'medium' | 'large';
+  detailedResponses: boolean;
+  includeCharts: boolean;
+}
+
+export interface ProjectFilterOptions {
+  status?: string;
+  ministry?: string;
+  minBudget?: number;
+  maxBudget?: number;
+  location?: string;
+  contractor?: string;
+}
+
+export interface BudgetStats {
+  totalBudget: number;
+  totalSpent: number;
+  remainingBudget: number;
+  completionPercentage: number;
+}
