@@ -5,6 +5,9 @@ import { cn } from '../lib/utils';
 import { SendIcon, Loader2, MicIcon, StopCircleIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Import the speech recognition types
+import '../lib/speech-recognition.d.ts';
+
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
