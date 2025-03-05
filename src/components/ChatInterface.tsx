@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
@@ -8,7 +7,7 @@ import { generateId, processMessage, fetchProjects } from '../lib/chatbot';
 import { Button } from './ui/button';
 import { DownloadIcon, RefreshCwIcon, SettingsIcon, DatabaseIcon, SunIcon, MoonIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { useTheme } from 'next-themes';
+import { useTheme } from '../components/ThemeProvider';
 
 const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
@@ -24,10 +23,9 @@ const ChatInterface: React.FC = () => {
   const [showProjectViewer, setShowProjectViewer] = useState(false);
   const [fontSize, setFontSize] = useState<string>(localStorage.getItem('budeshi_font_size') || 'medium');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { setTheme, theme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
-    // Apply font size from localStorage
     document.documentElement.style.setProperty(
       '--font-size-multiplier', 
       fontSize === 'small' ? '0.9' : fontSize === 'large' ? '1.1' : '1'
@@ -37,7 +35,6 @@ const ChatInterface: React.FC = () => {
   const handleSendMessage = async (content: string) => {
     if (content.trim() === '') return;
     
-    // Add user message
     const userMessage: Message = {
       id: generateId(),
       content,
@@ -49,13 +46,11 @@ const ChatInterface: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Process the message and get bot response with message history
       const botResponse = await processMessage(content, messages);
       setMessages(prev => [...prev, botResponse]);
     } catch (error) {
       console.error('Error processing message:', error);
       
-      // Add error message
       const errorMessage: Message = {
         id: generateId(),
         content: "I'm sorry, I encountered an error processing your request. Please try again.",
@@ -137,7 +132,6 @@ const ChatInterface: React.FC = () => {
     });
   };
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -165,6 +159,7 @@ const ChatInterface: React.FC = () => {
                 size="sm"
                 className="text-xs h-8"
                 onClick={toggleTheme}
+                title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
               >
                 {theme === 'dark' ? (
                   <SunIcon className="h-3.5 w-3.5" />
