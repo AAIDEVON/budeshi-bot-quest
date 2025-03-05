@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
@@ -106,6 +107,9 @@ const ChatInterface: React.FC = () => {
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
+    toast.success(`${theme === 'dark' ? 'Light' : 'Dark'} mode enabled`, {
+      description: "Your theme preference has been saved"
+    });
   };
 
   const setOpenAIKey = () => {
@@ -162,10 +166,11 @@ const ChatInterface: React.FC = () => {
                 title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
               >
                 {theme === 'dark' ? (
-                  <SunIcon className="h-3.5 w-3.5" />
+                  <SunIcon className="h-3.5 w-3.5 mr-1.5" />
                 ) : (
-                  <MoonIcon className="h-3.5 w-3.5" />
+                  <MoonIcon className="h-3.5 w-3.5 mr-1.5" />
                 )}
+                {theme === 'dark' ? 'Light' : 'Dark'} Mode
               </Button>
               
               <div className="relative group">
