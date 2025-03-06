@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
@@ -30,7 +29,6 @@ const ProjectViewer: React.FC<ProjectViewerProps> = ({ onClose }) => {
   });
   const [activeTab, setActiveTab] = useState<'list' | 'charts'>('list');
 
-  // Load projects from database
   useEffect(() => {
     const loadProjects = async () => {
       try {
@@ -47,11 +45,9 @@ const ProjectViewer: React.FC<ProjectViewerProps> = ({ onClose }) => {
     loadProjects();
   }, []);
 
-  // Get unique values for filters
   const statuses = useMemo(() => getUniqueFilterValues(projects, 'status'), [projects]);
   const ministries = useMemo(() => getUniqueFilterValues(projects, 'ministry'), [projects]);
 
-  // Apply filters to projects
   const filteredProjects = useMemo(() => {
     return filterProjects(projects, searchTerm, {
       status: filters.status,
@@ -59,16 +55,14 @@ const ProjectViewer: React.FC<ProjectViewerProps> = ({ onClose }) => {
     });
   }, [projects, searchTerm, filters]);
 
-  // Calculate budget statistics
   const budgetStats = useMemo(() => {
     return calculateBudgetStats(filteredProjects);
   }, [filteredProjects]);
 
-  // Prepare data for charts
   const budgetComparisonData = useMemo(() => {
     return filteredProjects.map(project => ({
       name: project.name.length > 20 ? `${project.name.substring(0, 20)}...` : project.name,
-      budget: project.budget / 1000000000, // Convert to billions for readability
+      budget: project.budget / 1000000000,
       spent: project.spent / 1000000000
     }));
   }, [filteredProjects]);
@@ -85,7 +79,6 @@ const ProjectViewer: React.FC<ProjectViewerProps> = ({ onClose }) => {
     }));
   }, [filteredProjects]);
 
-  // Handle filter reset
   const resetFilters = () => {
     setSearchTerm('');
     setFilters({
@@ -94,7 +87,6 @@ const ProjectViewer: React.FC<ProjectViewerProps> = ({ onClose }) => {
     });
   };
 
-  // Export projects data as CSV
   const handleExportAsCSV = async () => {
     try {
       const csv = await exportProjectsAsCSV();
@@ -323,4 +315,3 @@ const ProjectViewer: React.FC<ProjectViewerProps> = ({ onClose }) => {
 };
 
 export default ProjectViewer;
-

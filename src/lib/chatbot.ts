@@ -1,6 +1,6 @@
 
 import { Message, ProjectInfo, UserPreferences } from "./types";
-import { getAllProjects, findProject as findProjectInDb, exportProjectsAsCSV as exportCSV } from "./database";
+import { getAllProjects, findProjects, exportProjectsAsCSV as exportCSV } from "./database";
 
 // Function to fetch projects (now from IndexedDB)
 export const fetchProjects = async (): Promise<ProjectInfo[]> => {
@@ -49,7 +49,7 @@ export const saveUserPreferences = (preferences: UserPreferences): void => {
 
 // Find project by name or ID
 export const findProject = async (searchTerm: string): Promise<ProjectInfo | undefined> => {
-  const projects = await findProjectInDb(searchTerm);
+  const projects = await findProjects(searchTerm);
   return projects.length > 0 ? projects[0] : undefined;
 };
 
