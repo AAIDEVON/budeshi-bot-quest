@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell
@@ -8,16 +8,18 @@ import { Search, Filter, X, DownloadIcon } from 'lucide-react';
 import { ProjectInfo } from '../lib/types';
 import { Button } from './ui/button';
 import { filterProjects, getUniqueFilterValues, calculateBudgetStats } from '../lib/projectUtils';
-import { formatCurrency } from '../lib/chatbot';
+import { formatCurrency, exportProjectsAsCSV } from '../lib/chatbot';
+import { getAllProjects } from '../lib/database';
 
 interface ProjectViewerProps {
-  projects: ProjectInfo[];
   onClose: () => void;
 }
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A569BD', '#EC7063'];
 
-const ProjectViewer: React.FC<ProjectViewerProps> = ({ projects, onClose }) => {
+const ProjectViewer: React.FC<ProjectViewerProps> = ({ onClose }) => {
+  const [projects, setProjects] = useState<ProjectInfo[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<{
     status: string;
@@ -27,6 +29,23 @@ const ProjectViewer: React.FC<ProjectViewerProps> = ({ projects, onClose }) => {
     ministry: ''
   });
   const [activeTab, setActiveTab] = useState<'list' | 'charts'>('list');
+
+  // Load projects from database
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        setLoading(true);
+        const data = await getAllProjects();
+        setProjects(data);
+      } catch (error) {
+        console.error('Error loading projects:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProjects();
+  }, []);
 
   // Get unique values for filters
   const statuses = useMemo(() => getUniqueFilterValues(projects, 'status'), [projects]);
@@ -76,44 +95,33 @@ const ProjectViewer: React.FC<ProjectViewerProps> = ({ projects, onClose }) => {
   };
 
   // Export projects data as CSV
-  const exportAsCSV = () => {
-    const headers = [
-      'Name',
-      'Description',
-      'Status',
-      'Budget',
-      'Spent',
-      'Location',
-      'Ministry',
-      'Contractor',
-      'Start Date',
-      'End Date'
-    ].join(',');
-
-    const rows = filteredProjects.map(project => [
-      `"${project.name}"`,
-      `"${project.description}"`,
-      `"${project.status}"`,
-      project.budget,
-      project.spent,
-      `"${project.location}"`,
-      `"${project.ministry}"`,
-      `"${project.contractor}"`,
-      project.startDate,
-      project.endDate
-    ].join(','));
-
-    const csv = [headers, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `budeshi-projects-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleExportAsCSV = async () => {
+    try {
+      const csv = await exportProjectsAsCSV();
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `budeshi-projects-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-background rounded-xl w-full max-w-5xl max-h-[90vh] p-8 flex flex-col items-center justify-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="mt-4 text-lg">Loading projects...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -165,7 +173,7 @@ const ProjectViewer: React.FC<ProjectViewerProps> = ({ projects, onClose }) => {
                 <Filter className="h-4 w-4" />
               </Button>
               
-              <Button variant="outline" size="icon" onClick={exportAsCSV} title="Export as CSV">
+              <Button variant="outline" size="icon" onClick={handleExportAsCSV} title="Export as CSV">
                 <DownloadIcon className="h-4 w-4" />
               </Button>
             </div>
@@ -315,3 +323,4 @@ const ProjectViewer: React.FC<ProjectViewerProps> = ({ projects, onClose }) => {
 };
 
 export default ProjectViewer;
+

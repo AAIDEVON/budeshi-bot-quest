@@ -1,91 +1,10 @@
 
 import { Message, ProjectInfo, UserPreferences } from "./types";
+import { getAllProjects, findProject as findProjectInDb, exportProjectsAsCSV as exportCSV } from "./database";
 
-// Mock data for projects
-const mockProjects: ProjectInfo[] = [
-  {
-    id: "1",
-    name: "Lagos-Ibadan Expressway Rehabilitation",
-    description: "Complete rehabilitation of the Lagos-Ibadan expressway to improve transportation infrastructure",
-    status: "In Progress",
-    budget: 167000000000,
-    spent: 89000000000,
-    location: "Lagos/Oyo States",
-    startDate: "2018-03-15",
-    endDate: "2023-12-31",
-    ministry: "Ministry of Works and Housing",
-    contractor: "Julius Berger & RCC Nigeria Limited"
-  },
-  {
-    id: "2",
-    name: "Abuja Light Rail Project",
-    description: "Construction of a light rail system to improve public transportation in the FCT",
-    status: "Completed",
-    budget: 45000000000,
-    spent: 52000000000,
-    location: "Federal Capital Territory",
-    startDate: "2015-07-12",
-    endDate: "2022-05-20",
-    ministry: "FCT Administration",
-    contractor: "CCECC Nigeria Limited"
-  },
-  {
-    id: "3",
-    name: "Primary Healthcare Centers Renovation",
-    description: "Renovation and equipping of 10,000 primary healthcare centers across Nigeria",
-    status: "Delayed",
-    budget: 55000000000,
-    spent: 23000000000,
-    location: "Nationwide",
-    startDate: "2020-01-10",
-    endDate: "2023-01-10",
-    ministry: "Ministry of Health",
-    contractor: "Multiple Contractors"
-  },
-  {
-    id: "4",
-    name: "Second Niger Bridge Construction",
-    description: "Construction of a second bridge over the River Niger between Asaba and Onitsha",
-    status: "Completed",
-    budget: 206870000000,
-    spent: 210000000000,
-    location: "Delta/Anambra States",
-    startDate: "2017-08-15",
-    endDate: "2022-10-25",
-    ministry: "Ministry of Works and Housing",
-    contractor: "Julius Berger Nigeria PLC"
-  },
-  {
-    id: "5",
-    name: "Mambilla Hydroelectric Power Project",
-    description: "Construction of a 3,050 MW hydroelectric power plant on the Mambilla Plateau",
-    status: "Planning Phase",
-    budget: 5800000000000,
-    spent: 200000000000,
-    location: "Taraba State",
-    startDate: "2021-06-01",
-    endDate: "2030-12-31",
-    ministry: "Ministry of Power",
-    contractor: "China Civil Engineering Construction Corporation"
-  },
-  {
-    id: "6",
-    name: "Lekki Deep Sea Port Development",
-    description: "Development of a deep sea port in the Lagos Free Trade Zone",
-    status: "In Progress",
-    budget: 398000000000,
-    spent: 290000000000,
-    location: "Lagos State",
-    startDate: "2019-03-29",
-    endDate: "2024-09-30",
-    ministry: "Ministry of Transportation",
-    contractor: "China Harbour Engineering Company"
-  }
-];
-
-// Function to fetch projects (now simply returns mock data)
-export const fetchProjects = (): ProjectInfo[] => {
-  return mockProjects;
+// Function to fetch projects (now from IndexedDB)
+export const fetchProjects = async (): Promise<ProjectInfo[]> => {
+  return await getAllProjects();
 };
 
 // Function to generate a unique ID
@@ -129,20 +48,16 @@ export const saveUserPreferences = (preferences: UserPreferences): void => {
 };
 
 // Find project by name or ID
-export const findProject = (searchTerm: string): ProjectInfo | undefined => {
-  const normalizedTerm = searchTerm.toLowerCase().trim();
-  
-  return mockProjects.find(
-    project => 
-      project.id === normalizedTerm ||
-      project.name.toLowerCase().includes(normalizedTerm)
-  );
+export const findProject = async (searchTerm: string): Promise<ProjectInfo | undefined> => {
+  const projects = await findProjectInDb(searchTerm);
+  return projects.length > 0 ? projects[0] : undefined;
 };
 
 // Generate system prompt with context about BUDESHI and available data
-const generateSystemPrompt = (): string => {
+const generateSystemPrompt = async (): Promise<string> => {
   // Create a condensed version of the projects data to include in the prompt
-  const projectsData = mockProjects.map(project => ({
+  const projects = await fetchProjects();
+  const projectsData = projects.map(project => ({
     name: project.name,
     status: project.status,
     budget: formatCurrency(project.budget),
@@ -222,7 +137,7 @@ const callLLMAPI = async (userMessage: string, conversationHistory: { role: stri
 export const processMessage = async (content: string, previousMessages: Message[] = []): Promise<Message> => {
   try {
     // Convert previous messages to the format expected by the LLM API
-    const systemPrompt = generateSystemPrompt();
+    const systemPrompt = await generateSystemPrompt();
     const conversationHistory = [
       { role: 'system', content: systemPrompt },
       ...previousMessages.map(msg => ({
@@ -249,32 +164,6 @@ export const processMessage = async (content: string, previousMessages: Message[
 };
 
 // Export projects as CSV
-export const exportProjectsAsCSV = (projects: ProjectInfo[] = mockProjects): string => {
-  const headers = [
-    'Name',
-    'Description',
-    'Status',
-    'Budget',
-    'Spent',
-    'Location',
-    'Ministry',
-    'Contractor',
-    'Start Date',
-    'End Date'
-  ].join(',');
-
-  const rows = projects.map(project => [
-    `"${project.name}"`,
-    `"${project.description}"`,
-    `"${project.status}"`,
-    project.budget,
-    project.spent,
-    `"${project.location}"`,
-    `"${project.ministry}"`,
-    `"${project.contractor}"`,
-    project.startDate,
-    project.endDate
-  ].join(','));
-
-  return [headers, ...rows].join('\n');
+export const exportProjectsAsCSV = async (): Promise<string> => {
+  return await exportCSV();
 };
