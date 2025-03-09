@@ -38,9 +38,9 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
-## What technologies are used for this project?
+## BUILT WITH?
 
-This project is built with .
+This was built with .
 
 - Vite
 - TypeScript
