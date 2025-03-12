@@ -46,9 +46,9 @@ const ChatInterface: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="max-w-3xl mx-auto w-full px-4 pt-4">
-        <ChatActionButtons 
+    <div className="flex flex-col h-full mt-24">
+      <div className="w-full max-w-3xl mx-auto px-4">
+        <ChatActionButtons
           apiKey={apiKey}
           fontSize={fontSize}
           onOpenProjectViewer={() => setShowProjectViewer(true)}
