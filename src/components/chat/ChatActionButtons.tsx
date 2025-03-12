@@ -40,10 +40,6 @@ const ChatActionButtons: React.FC<ChatActionButtonsProps> = ({
     });
   };
 
-  // useEffect=(()=>{
-  //   onChangeFontSize(font)
-  // },[font])
-
   return (
     <div className="flex gap-3 w-full max-w-3xl py-4 overflow-x-auto overflow-y-hidden">
       <div className="mr-auto flex space-x-2">
@@ -76,7 +72,7 @@ const ChatActionButtons: React.FC<ChatActionButtonsProps> = ({
 
        
         <select
-          className="w-16 border py-1 px-2 rounded-xl bg-background"
+          className="w-16 border py-1 px-2 rounded-xl bg-background focus:ring-0"
           onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
             onChangeFontSize(event.target.value as "small" | "medium" | "large")
           }
